@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GyroStream | Advanced Gyroscope Recorder</title>
+    <meta name="description" content="A high-performance web tool to record and export mobile gyroscope sensor data.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Space+Mono&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <main class="container">
+        <header>
+            <h1>Gyro<span>Stream</span></h1>
+            <p class="subtitle">Precision Motion Data Capture</p>
+        </header>
+
+        <section id="permission-section" class="card">
+            <p>Access to your device's motion sensors is required to record gyroscope data.</p>
+            <button id="request-permission" class="btn-primary">Enable Sensors</button>
+        </section>
+
+        <section id="display-section" class="hidden">
+            <div class="nav-controls">
+                <button id="back-to-start" class="btn-text">← Back</button>
+            </div>
+            <div class="sensor-grid">
+                <div class="sensor-card" id="card-x">
+                    <label>Rotation X (Pitch)</label>
+                    <div class="value" id="val-x">0.00</div>
+                    <div class="bar-container">
+                        <div class="bar" id="bar-x"></div>
+                    </div>
+                </div>
+                <div class="sensor-card" id="card-y">
+                    <label>Rotation Y (Roll)</label>
+                    <div class="value" id="val-y">0.00</div>
+                    <div class="bar-container">
+                        <div class="bar" id="bar-y"></div>
+                    </div>
+                </div>
+                <div class="sensor-card" id="card-z">
+                    <label>Rotation Z (Yaw)</label>
+                    <div class="value" id="val-z">0.00</div>
+                    <div class="bar-container">
+                        <div class="bar" id="bar-z"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recording-controls">
+                <div class="status-indicator">
+                    <div class="dot" id="recording-dot"></div>
+                    <span id="status-text">Idle</span>
+                </div>
+                <div class="timer" id="timer">00:00:00</div>
+
+                <div class="button-group">
+                    <button id="start-rec" class="btn-primary">Start Recording</button>
+                    <button id="stop-rec" class="btn-secondary hidden">Stop & Save</button>
+                    <button id="download-csv" class="btn-outline hidden">Download CSV</button>
+                    <button id="back-to-home" class="btn-ghost">Back to Home</button>
+                </div>
+            </div>
+
+            <div class="log-info">
+                <p>Samples Collected: <span id="sample-count">0</span></p>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>Runs best on Chrome (Android) or Safari (iOS). Requires HTTPS.</p>
+        </footer>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
