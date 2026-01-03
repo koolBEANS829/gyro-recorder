@@ -108,28 +108,34 @@ function init3D() {
     window.addEventListener('resize', onWindowResize, false);
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
-    const pointLight = new THREE.PointLight(0xffffff, 1);
+    const pointLight = new THREE.PointLight(0x00f2ff, 1.5);
     pointLight.position.set(5, 5, 5);
     scene.add(pointLight);
+    const pointLight2 = new THREE.PointLight(0x7000ff, 1);
+    pointLight2.position.set(-5, -5, 5);
+    scene.add(pointLight2);
 
-    // Phone Mesh
-    const geometry = new THREE.BoxGeometry(2, 4, 0.2);
+    // Cube Mesh
+    const geometry = new THREE.BoxGeometry(2.5, 2.5, 2.5);
     const material = new THREE.MeshPhongMaterial({
         color: 0x00f2ff,
-        emissive: 0x00f2ff,
-        emissiveIntensity: 0.2,
-        shininess: 100
+        emissive: 0x003344,
+        emissiveIntensity: 0.5,
+        shininess: 100,
+        transparent: true,
+        opacity: 0.9
     });
     phoneMesh = new THREE.Mesh(geometry, material);
-    scene.add(phoneMesh);
 
-    // Grid Helper for reference
-    const grid = new THREE.GridHelper(10, 10, 0x7000ff, 0x444444);
-    grid.rotation.x = Math.PI / 2;
-    grid.position.z = -2;
-    scene.add(grid);
+    // Add edges for a cleaner cube look
+    const edges = new THREE.EdgesGeometry(geometry);
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+    const wireframe = new THREE.LineSegments(edges, lineMaterial);
+    phoneMesh.add(wireframe);
+
+    scene.add(phoneMesh);
 
     animate();
 }
