@@ -157,11 +157,13 @@ function handleOrientation(event) {
     // Update 3D Phone Rotation
     if (phoneMesh) {
         // Convert degrees to radians
-        // Note: Orientation data mapping can vary by device/browser
-        // but typically: beta is X, gamma is Y, alpha is Z
-        phoneMesh.rotation.x = THREE.MathUtils.degToRad(beta || 0);
+        // When phone is upright, beta is ~90 degrees. We subtract 90 so 
+        // the 3D model is also upright when you hold the phone normally.
+        const adjustedBeta = (beta || 0) - 90;
+
+        phoneMesh.rotation.x = THREE.MathUtils.degToRad(adjustedBeta);
         phoneMesh.rotation.y = THREE.MathUtils.degToRad(gamma || 0);
-        phoneMesh.rotation.z = THREE.MathUtils.degToRad(alpha || 0);
+        phoneMesh.rotation.z = THREE.MathUtils.degToRad(-(alpha || 0)); // Negate for natural feel
     }
 
     // Update bars
