@@ -22,6 +22,10 @@ let recordedData = [];
 let startTime = null;
 let timerInterval = null;
 
+// Three.js 3D Visualizer Variables
+let scene, camera, renderer, phoneMesh;
+const visualizerContainer = document.getElementById('visualizer-container');
+
 // Navigation
 backBtn.addEventListener('click', () => {
     if (isRecording) {
@@ -58,8 +62,54 @@ function startApp() {
     permissionSection.classList.add('hidden');
     displaySection.classList.remove('hidden');
 
+    init3D();
     window.addEventListener('deviceorientation', handleOrientation);
     window.addEventListener('devicemotion', handleMotion);
+}
+
+function init3D() {
+    // Scene setup
+    scene = new THREE.Scene();
+    const aspect = visualizerContainer.clientWidth / visualizerContainer.clientHeight;
+    camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+    camera.position.z = 5;
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(visualizerContainer.clientWidth, visualizerContainer.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    visualizerContainer.innerHTML = '';
+    visualizerContainer.appendChild(renderer.domElement);
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.position.set(5, 5, 5);
+    scene.add(pointLight);
+
+    // Phone Mesh
+    const geometry = new THREE.BoxGeometry(2, 4, 0.2);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0x00f2ff,
+        emissive: 0x00f2ff,
+        emissiveIntensity: 0.2,
+        shininess: 100
+    });
+    phoneMesh = new THREE.Mesh(geometry, material);
+    scene.add(phoneMesh);
+
+    // Grid Helper for reference
+    const grid = new THREE.GridHelper(10, 10, 0x7000ff, 0x444444);
+    grid.rotation.x = Math.PI / 2;
+    grid.position.z = -2;
+    scene.add(grid);
+
+    animate();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
 }
 
 function handleOrientation(event) {
@@ -70,8 +120,17 @@ function handleOrientation(event) {
     valY.textContent = gamma ? gamma.toFixed(2) : '0.00';
     valZ.textContent = alpha ? alpha.toFixed(2) : '0.00';
 
-    // Update bars (Normalize values for visual representation)
-    // Beta: -180 to 180, Gamma: -90 to 90, Alpha: 0 to 360
+    // Update 3D Phone Rotation
+    if (phoneMesh) {
+        // Convert degrees to radians
+        // Note: Orientation data mapping can vary by device/browser
+        // but typically: beta is X, gamma is Y, alpha is Z
+        phoneMesh.rotation.x = THREE.MathUtils.degToRad(beta || 0);
+        phoneMesh.rotation.y = THREE.MathUtils.degToRad(gamma || 0);
+        phoneMesh.rotation.z = THREE.MathUtils.degToRad(alpha || 0);
+    }
+
+    // Update bars
     updateBar(barX, (beta + 180) / 3.6);
     updateBar(barY, (gamma + 90) / 1.8);
     updateBar(barZ, alpha / 3.6);

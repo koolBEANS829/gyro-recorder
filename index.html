@@ -34,6 +34,11 @@
             <div class="nav-controls">
                 <button id="back-to-start" class="btn-text">← Back</button>
             </div>
+
+            <div id="visualizer-container" class="card visualizer-card">
+                <!-- 3D Canvas will be injected here -->
+            </div>
+
             <div class="sensor-grid">
                 <div class="sensor-card" id="card-x">
                     <label>Rotation X (Pitch)</label>
@@ -83,6 +88,7 @@
         </footer>
     </main>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
     <script src="app.js"></script>
 </body>
 
