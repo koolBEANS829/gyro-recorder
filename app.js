@@ -26,6 +26,8 @@ let timerInterval = null;
 let scene, camera, renderer, phoneMesh;
 let animationId = null;
 const visualizerContainer = document.getElementById('visualizer-container');
+const pipButton = document.getElementById('pip-button');
+let pipWindow = null;
 
 // Navigation
 backBtn.addEventListener('click', () => {
@@ -65,6 +67,64 @@ requestBtn.addEventListener('click', async () => {
         startApp();
     }
 });
+
+// Picture-in-Picture Mode
+pipButton.addEventListener('click', async () => {
+    // Check if Document PiP is supported
+    if (!('documentPictureInPicture' in window)) {
+        alert('Picture-in-Picture is not supported in this browser. Try Chrome on desktop.');
+        return;
+    }
+
+    try {
+        // Open PiP window
+        pipWindow = await documentPictureInPicture.requestWindow({
+            width: 300,
+            height: 300
+        });
+
+        // Copy styles to PiP window
+        const style = pipWindow.document.createElement('style');
+        style.textContent = `
+            body { 
+                margin: 0; 
+                background: #050510; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center;
+                overflow: hidden;
+            }
+            canvas { width: 100% !important; height: 100% !important; }
+        `;
+        pipWindow.document.head.appendChild(style);
+
+        // Move the canvas to PiP window
+        const canvas = visualizerContainer.querySelector('canvas');
+        if (canvas) {
+            pipWindow.document.body.appendChild(canvas);
+            onWindowResize(); // Resize for new container
+        }
+
+        // Handle PiP window close
+        pipWindow.addEventListener('pagehide', () => {
+            // Move canvas back
+            const canvas = pipWindow.document.querySelector('canvas');
+            if (canvas) {
+                visualizerContainer.appendChild(canvas);
+                onWindowResize();
+            }
+            pipWindow = null;
+            pipButton.textContent = '⧉ Pop Out';
+        });
+
+        pipButton.textContent = '⧉ Pop In';
+
+    } catch (error) {
+        console.error('PiP Error:', error);
+        alert('Could not open Picture-in-Picture: ' + error.message);
+    }
+});
+
 function startApp() {
     permissionSection.classList.add('hidden');
     displaySection.classList.remove('hidden');
