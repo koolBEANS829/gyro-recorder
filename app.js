@@ -24,6 +24,7 @@ let timerInterval = null;
 
 // Three.js 3D Visualizer Variables
 let scene, camera, renderer, phoneMesh;
+let animationId = null;
 const visualizerContainer = document.getElementById('visualizer-container');
 
 // Navigation
@@ -31,6 +32,13 @@ backBtn.addEventListener('click', () => {
     if (isRecording) {
         stopBtn.click();
     }
+
+    // Stop 3D animation
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+    }
+
     displaySection.classList.add('hidden');
     permissionSection.classList.remove('hidden');
     window.removeEventListener('deviceorientation', handleOrientation);
@@ -57,7 +65,6 @@ requestBtn.addEventListener('click', async () => {
         startApp();
     }
 });
-
 function startApp() {
     permissionSection.classList.add('hidden');
     displaySection.classList.remove('hidden');
@@ -68,6 +75,24 @@ function startApp() {
 }
 
 function init3D() {
+    if (typeof THREE === 'undefined') {
+        console.error('Three.js not loaded');
+        visualizerContainer.innerHTML = '<p style="padding:1rem">Error: 3D Library not loaded</p>';
+        return;
+    }
+
+    // Ensure container has dimensions
+    if (visualizerContainer.clientWidth === 0 || visualizerContainer.clientHeight === 0) {
+        requestAnimationFrame(init3D);
+        return;
+    }
+
+    // Cleanup previous if exists
+    if (renderer) {
+        visualizerContainer.innerHTML = ''; // Clear old canvas
+    }
+    if (animationId) cancelAnimationFrame(animationId);
+
     // Scene setup
     scene = new THREE.Scene();
     const aspect = visualizerContainer.clientWidth / visualizerContainer.clientHeight;
@@ -77,8 +102,10 @@ function init3D() {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(visualizerContainer.clientWidth, visualizerContainer.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
-    visualizerContainer.innerHTML = '';
     visualizerContainer.appendChild(renderer.domElement);
+
+    // Handle Window Resize
+    window.addEventListener('resize', onWindowResize, false);
 
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -107,8 +134,15 @@ function init3D() {
     animate();
 }
 
+function onWindowResize() {
+    if (!camera || !renderer) return;
+    camera.aspect = visualizerContainer.clientWidth / visualizerContainer.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(visualizerContainer.clientWidth, visualizerContainer.clientHeight);
+}
+
 function animate() {
-    requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
 
