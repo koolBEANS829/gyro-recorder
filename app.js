@@ -22,12 +22,14 @@ let recordedData = [];
 let startTime = null;
 let timerInterval = null;
 
-// Three.js 3D Visualizer Variables
-let scene, camera, renderer, phoneMesh;
-let animationId = null;
+// Graph Variables
+let chart;
 const visualizerContainer = document.getElementById('visualizer-container');
 const pipButton = document.getElementById('pip-button');
 let pipWindow = null;
+
+// Wake Lock
+let wakeLock = null;
 
 // Navigation
 backBtn.addEventListener('click', () => {
@@ -35,16 +37,12 @@ backBtn.addEventListener('click', () => {
         stopBtn.click();
     }
 
-    // Stop 3D animation
-    if (animationId) {
-        cancelAnimationFrame(animationId);
-        animationId = null;
-    }
-
     displaySection.classList.add('hidden');
     permissionSection.classList.remove('hidden');
     window.removeEventListener('deviceorientation', handleOrientation);
     window.removeEventListener('devicemotion', handleMotion);
+
+    releaseWakeLock();
 });
 
 // Permission Handling
@@ -67,6 +65,38 @@ requestBtn.addEventListener('click', async () => {
         startApp();
     }
 });
+
+// Wake Lock Functionality
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('Wake Lock is active');
+            wakeLock.addEventListener('release', () => {
+                console.log('Wake Lock released');
+            });
+        }
+    } catch (err) {
+        console.error(`${err.name}, ${err.message}`);
+    }
+}
+
+function releaseWakeLock() {
+    if (wakeLock !== null) {
+        wakeLock.release()
+            .then(() => {
+                wakeLock = null;
+            });
+    }
+}
+
+// Re-acquire wake lock on visibility change
+document.addEventListener('visibilitychange', async () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+        await requestWakeLock();
+    }
+});
+
 
 // Picture-in-Picture Mode
 pipButton.addEventListener('click', async () => {
@@ -102,7 +132,6 @@ pipButton.addEventListener('click', async () => {
         const canvas = visualizerContainer.querySelector('canvas');
         if (canvas) {
             pipWindow.document.body.appendChild(canvas);
-            onWindowResize(); // Resize for new container
         }
 
         // Handle PiP window close
@@ -111,7 +140,6 @@ pipButton.addEventListener('click', async () => {
             const canvas = pipWindow.document.querySelector('canvas');
             if (canvas) {
                 visualizerContainer.appendChild(canvas);
-                onWindowResize();
             }
             pipWindow = null;
             pipButton.textContent = '⧉ Pop Out';
@@ -129,88 +157,83 @@ function startApp() {
     permissionSection.classList.add('hidden');
     displaySection.classList.remove('hidden');
 
-    init3D();
+    initGraph();
+    requestWakeLock();
     window.addEventListener('deviceorientation', handleOrientation);
     window.addEventListener('devicemotion', handleMotion);
 }
 
-function init3D() {
-    if (typeof THREE === 'undefined') {
-        console.error('Three.js not loaded');
-        visualizerContainer.innerHTML = '<p style="padding:1rem">Error: 3D Library not loaded</p>';
-        return;
+function initGraph() {
+    if (chart) {
+        chart.destroy();
     }
+    visualizerContainer.innerHTML = '<canvas id="sensorChart"></canvas>';
+    const ctx = document.getElementById('sensorChart').getContext('2d');
 
-    // Ensure container has dimensions
-    if (visualizerContainer.clientWidth === 0 || visualizerContainer.clientHeight === 0) {
-        requestAnimationFrame(init3D);
-        return;
-    }
+    const initialData = {
+        labels: Array(50).fill(''),
+        datasets: [
+            {
+                label: 'Accel X',
+                borderColor: 'rgb(255, 99, 132)',
+                data: Array(50).fill(0),
+                fill: false,
+                pointRadius: 0
+            },
+            {
+                label: 'Accel Y',
+                borderColor: 'rgb(54, 162, 235)',
+                data: Array(50).fill(0),
+                fill: false,
+                pointRadius: 0
+            },
+            {
+                label: 'Accel Z',
+                borderColor: 'rgb(75, 192, 192)',
+                data: Array(50).fill(0),
+                fill: false,
+                pointRadius: 0
+            }
+        ]
+    };
 
-    // Cleanup previous if exists
-    if (renderer) {
-        visualizerContainer.innerHTML = ''; // Clear old canvas
-    }
-    if (animationId) cancelAnimationFrame(animationId);
-
-    // Scene setup
-    scene = new THREE.Scene();
-    const aspect = visualizerContainer.clientWidth / visualizerContainer.clientHeight;
-    camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-    camera.position.z = 5;
-
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(visualizerContainer.clientWidth, visualizerContainer.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    visualizerContainer.appendChild(renderer.domElement);
-
-    // Handle Window Resize
-    window.addEventListener('resize', onWindowResize, false);
-
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-    scene.add(ambientLight);
-    const pointLight = new THREE.PointLight(0x00f2ff, 1.5);
-    pointLight.position.set(5, 5, 5);
-    scene.add(pointLight);
-    const pointLight2 = new THREE.PointLight(0x7000ff, 1);
-    pointLight2.position.set(-5, -5, 5);
-    scene.add(pointLight2);
-
-    // Cube Mesh
-    const geometry = new THREE.BoxGeometry(2.5, 2.5, 2.5);
-    const material = new THREE.MeshPhongMaterial({
-        color: 0x00f2ff,
-        emissive: 0x003344,
-        emissiveIntensity: 0.5,
-        shininess: 100,
-        transparent: true,
-        opacity: 0.9
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: initialData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: 'white'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: false
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.6)'
+                    },
+                    suggestedMin: -10,
+                    suggestedMax: 10
+                }
+            }
+        }
     });
-    phoneMesh = new THREE.Mesh(geometry, material);
-
-    // Add edges for a cleaner cube look
-    const edges = new THREE.EdgesGeometry(geometry);
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
-    const wireframe = new THREE.LineSegments(edges, lineMaterial);
-    phoneMesh.add(wireframe);
-
-    scene.add(phoneMesh);
-
-    animate();
 }
 
-function onWindowResize() {
-    if (!camera || !renderer) return;
-    camera.aspect = visualizerContainer.clientWidth / visualizerContainer.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(visualizerContainer.clientWidth, visualizerContainer.clientHeight);
-}
-
-function animate() {
-    animationId = requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-}
 
 function handleOrientation(event) {
     const { alpha, beta, gamma } = event;
@@ -220,18 +243,6 @@ function handleOrientation(event) {
     valY.textContent = gamma ? gamma.toFixed(2) : '0.00';
     valZ.textContent = alpha ? alpha.toFixed(2) : '0.00';
 
-    // Update 3D Phone Rotation
-    if (phoneMesh) {
-        // Convert degrees to radians
-        // When phone is upright, beta is ~90 degrees. We subtract 90 so 
-        // the 3D model is also upright when you hold the phone normally.
-        const adjustedBeta = (beta || 0) - 90;
-
-        phoneMesh.rotation.x = THREE.MathUtils.degToRad(adjustedBeta);
-        phoneMesh.rotation.y = THREE.MathUtils.degToRad(gamma || 0);
-        phoneMesh.rotation.z = THREE.MathUtils.degToRad(-(alpha || 0)); // Negate for natural feel
-    }
-
     // Update bars
     updateBar(barX, (beta + 180) / 3.6);
     updateBar(barY, (gamma + 90) / 1.8);
@@ -239,11 +250,29 @@ function handleOrientation(event) {
 }
 
 function handleMotion(event) {
+    // Determine whether to use gravity or not.
+    // The request asks for "accelerometer", typically meaning raw or with gravity.
+    // The previous implementation used accelerationIncludingGravity.
+    const { x, y, z } = event.accelerationIncludingGravity || {};
+
+    // Update Graph
+    if (chart) {
+        chart.data.datasets[0].data.push(x || 0);
+        chart.data.datasets[0].data.shift();
+
+        chart.data.datasets[1].data.push(y || 0);
+        chart.data.datasets[1].data.shift();
+
+        chart.data.datasets[2].data.push(z || 0);
+        chart.data.datasets[2].data.shift();
+
+        chart.update();
+    }
+
     if (!isRecording) return;
 
     const timestamp = Date.now() - startTime;
     const { alpha, beta, gamma } = event.rotationRate || {};
-    const { x, y, z } = event.accelerationIncludingGravity || {};
 
     recordedData.push({
         timestamp,
@@ -273,6 +302,11 @@ startBtn.addEventListener('click', () => {
     downloadBtn.classList.add('hidden');
     recordingDot.classList.add('recording');
     statusText.textContent = 'Recording...';
+
+    // Ensure wake lock is active
+    if (!wakeLock) {
+        requestWakeLock();
+    }
 
     timerInterval = setInterval(updateTimer, 10);
 });
