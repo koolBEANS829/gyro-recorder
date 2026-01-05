@@ -17,10 +17,17 @@ const barX = document.getElementById('bar-x');
 const barY = document.getElementById('bar-y');
 const barZ = document.getElementById('bar-z');
 
+// Speed Tracker Element
+const speedVal = document.getElementById('speed-val');
+
 let isRecording = false;
 let recordedData = [];
 let startTime = null;
 let timerInterval = null;
+
+// Speed calculation variables
+let currentSpeed = 0; // m/s
+let lastMotionTime = 0;
 
 // Graph Variables
 let chart;
@@ -41,6 +48,10 @@ backBtn.addEventListener('click', () => {
     permissionSection.classList.remove('hidden');
     window.removeEventListener('deviceorientation', handleOrientation);
     window.removeEventListener('devicemotion', handleMotion);
+
+    // Reset Speed
+    currentSpeed = 0;
+    if (speedVal) speedVal.textContent = '0.00';
 
     releaseWakeLock();
 });
@@ -159,6 +170,11 @@ function startApp() {
 
     initGraph();
     requestWakeLock();
+
+    // Reset Motion Time
+    lastMotionTime = Date.now();
+    currentSpeed = 0;
+
     window.addEventListener('deviceorientation', handleOrientation);
     window.addEventListener('devicemotion', handleMotion);
 }
@@ -250,10 +266,44 @@ function handleOrientation(event) {
 }
 
 function handleMotion(event) {
-    // Determine whether to use gravity or not.
-    // The request asks for "accelerometer", typically meaning raw or with gravity.
-    // The previous implementation used accelerationIncludingGravity.
+    const now = Date.now();
+    // Use acceleration including gravity for graph/data (raw sensor data)
     const { x, y, z } = event.accelerationIncludingGravity || {};
+
+    // Use acceleration without gravity for speed calculation (if available)
+    // Fallback to removing gravity from Z if not available is tricky due to orientation.
+    // Best effort: rely on event.acceleration
+    const linearAccel = event.acceleration || { x: 0, y: 0, z: 0 };
+    const ax = linearAccel.x || 0;
+    const ay = linearAccel.y || 0;
+    const az = linearAccel.z || 0;
+
+    // Calculate dt in seconds
+    const dt = (now - lastMotionTime) / 1000;
+    lastMotionTime = now;
+
+    // Calculate magnitude of linear acceleration
+    const accelMag = Math.sqrt(ax * ax + ay * ay + az * az);
+
+    // Simple Integration for Speed (v = v0 + a*t)
+    // Apply a threshold to ignore noise (e.g., < 0.2 m/s^2)
+    if (accelMag > 0.2) {
+        currentSpeed += accelMag * dt;
+    } else {
+        // Optional: Decay speed when not moving to correct drift?
+        // currentSpeed *= 0.95;
+        // For now, let's keep it pure integration but maybe cap it or reset if desired.
+        // User asked for a tracker, usually implying accumulation.
+    }
+
+    // Convert m/s to ft/s
+    const speedFps = currentSpeed * 3.28084;
+
+    // Update Speed Display
+    if (speedVal) {
+        speedVal.textContent = speedFps.toFixed(2);
+    }
+
 
     // Update Graph
     if (chart) {
@@ -296,6 +346,11 @@ startBtn.addEventListener('click', () => {
     isRecording = true;
     recordedData = [];
     startTime = Date.now();
+    // Reset Speed on recording start? Usually you want to track from start of recording.
+    // Or track continuously? The prompt implies "Speed tracker" which is often continuous.
+    // But recording usually implies a session.
+    // I'll reset speed on start recording as well to ensure data alignment.
+    currentSpeed = 0;
 
     startBtn.classList.add('hidden');
     stopBtn.classList.remove('hidden');

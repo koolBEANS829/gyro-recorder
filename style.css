@@ -295,4 +295,34 @@ button {
     .container {
         padding: 1rem;
     }
+}.speed-card {
+    text-align: center;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.speed-card label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.speed-card .value {
+    font-family: 'Space Mono', monospace;
+    font-size: 3rem;
+    font-weight: 600;
+    color: var(--success);
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+.speed-card .unit {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 400;
 }
