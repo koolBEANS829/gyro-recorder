@@ -3,97 +3,174 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GyroStream | Advanced Gyroscope Recorder</title>
-    <meta name="description" content="A high-performance web tool to record and export mobile gyroscope sensor data.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>GyroStream | Precision Motion Capture</title>
+    <meta name="description"
+        content="Capture high-precision gyroscope and accelerometer data from your mobile device. Export as CSV for analysis.">
+    <meta name="theme-color" content="#0a0a1a">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Space+Mono&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet">
 </head>
 
 <body>
-    <div class="background-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-    </div>
+    <!-- Animated Background -->
+    <div class="bg-gradient"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
 
-    <main class="container">
-        <header>
-            <h1>Gyro<span>Stream</span></h1>
-            <p class="subtitle">Precision Motion Data Capture</p>
+    <main class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="12" r="3" />
+                        <line x1="12" y1="2" x2="12" y2="5" />
+                        <line x1="12" y1="19" x2="12" y2="22" />
+                        <line x1="2" y1="12" x2="5" y2="12" />
+                        <line x1="19" y1="12" x2="22" y2="12" />
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>GyroStream</h1>
+                    <span class="tagline">Precision Motion Capture</span>
+                </div>
+            </div>
         </header>
 
-        <section id="permission-section" class="card">
-            <p>Access to your device's motion sensors is required to record gyroscope data.</p>
-            <button id="request-permission" class="btn-primary">Enable Sensors</button>
+        <!-- Permission Screen -->
+        <section id="permission-screen" class="screen">
+            <div class="permission-card glass-card">
+                <div class="permission-icon">
+                    <svg viewBox="0 0 48 48" fill="none">
+                        <circle cx="24" cy="24" r="20" stroke="url(#grad1)" stroke-width="2" opacity="0.3" />
+                        <circle cx="24" cy="24" r="14" stroke="url(#grad1)" stroke-width="2" opacity="0.5" />
+                        <circle cx="24" cy="24" r="8" stroke="url(#grad1)" stroke-width="2" />
+                        <circle cx="24" cy="24" r="3" fill="url(#grad1)" />
+                        <defs>
+                            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#00d4ff" />
+                                <stop offset="100%" style="stop-color:#7c3aed" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <h2>Enable Motion Sensors</h2>
+                <p>Grant access to your device's gyroscope and accelerometer to start recording motion data.</p>
+                <button id="btn-enable" class="btn btn-primary">
+                    <span>Enable Sensors</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </button>
+                <p class="permission-note">Requires HTTPS • Works best on Chrome (Android) or Safari (iOS)</p>
+            </div>
         </section>
 
-        <section id="display-section" class="hidden">
-            <div class="nav-controls">
-                <button id="back-to-start" class="btn-text">← Back</button>
-                <button id="pip-button" class="btn-text">⧉ Pop Out</button>
+        <!-- Main Recording Screen -->
+        <section id="recording-screen" class="screen hidden">
+            <!-- Back Button -->
+            <button id="btn-back" class="btn-icon" aria-label="Go back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+            </button>
+
+            <!-- Orbital Visualizer -->
+            <div class="visualizer glass-card">
+                <canvas id="visualizer-canvas"></canvas>
             </div>
 
-            <div id="visualizer-container" class="card visualizer-card">
-                <!-- 3D Canvas will be injected here -->
-            </div>
-
-            <div class="card speed-card">
-                <label>Current Speed</label>
-                <div class="value"><span id="speed-val">0.00</span> <span class="unit">ft/s</span></div>
-            </div>
-
-            <div class="sensor-grid">
-                <div class="sensor-card" id="card-x">
-                    <label>Rotation X (Pitch)</label>
-                    <div class="value" id="val-x">0.00</div>
-                    <div class="bar-container">
-                        <div class="bar" id="bar-x"></div>
-                    </div>
+            <!-- Speed Display -->
+            <div class="speed-display glass-card">
+                <div class="speed-value">
+                    <span id="speed-val">0.00</span>
+                    <span class="speed-unit">ft/s</span>
                 </div>
-                <div class="sensor-card" id="card-y">
-                    <label>Rotation Y (Roll)</label>
-                    <div class="value" id="val-y">0.00</div>
-                    <div class="bar-container">
-                        <div class="bar" id="bar-y"></div>
+                <div class="speed-label">Estimated Speed</div>
+            </div>
+
+            <!-- Orientation Data -->
+            <div class="orientation-grid">
+                <div class="orientation-card glass-card" data-axis="x">
+                    <div class="orientation-ring">
+                        <svg viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" class="ring-bg" />
+                            <circle cx="50" cy="50" r="45" class="ring-fill" id="ring-x" />
+                        </svg>
+                        <span class="orientation-value" id="val-x">0.0°</span>
                     </div>
+                    <span class="orientation-label">Pitch (X)</span>
                 </div>
-                <div class="sensor-card" id="card-z">
-                    <label>Rotation Z (Yaw)</label>
-                    <div class="value" id="val-z">0.00</div>
-                    <div class="bar-container">
-                        <div class="bar" id="bar-z"></div>
+                <div class="orientation-card glass-card" data-axis="y">
+                    <div class="orientation-ring">
+                        <svg viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" class="ring-bg" />
+                            <circle cx="50" cy="50" r="45" class="ring-fill" id="ring-y" />
+                        </svg>
+                        <span class="orientation-value" id="val-y">0.0°</span>
                     </div>
+                    <span class="orientation-label">Roll (Y)</span>
+                </div>
+                <div class="orientation-card glass-card" data-axis="z">
+                    <div class="orientation-ring">
+                        <svg viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" class="ring-bg" />
+                            <circle cx="50" cy="50" r="45" class="ring-fill" id="ring-z" />
+                        </svg>
+                        <span class="orientation-value" id="val-z">0.0°</span>
+                    </div>
+                    <span class="orientation-label">Yaw (Z)</span>
                 </div>
             </div>
 
-            <div class="recording-controls">
-                <div class="status-indicator">
-                    <div class="dot" id="recording-dot"></div>
-                    <span id="status-text">Idle</span>
+            <!-- Recording Controls -->
+            <div class="recording-panel glass-card">
+                <div class="recording-status">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span class="status-text" id="status-text">Ready</span>
                 </div>
                 <div class="timer" id="timer">00:00:00</div>
-
-                <div class="button-group">
-                    <button id="start-rec" class="btn-primary">Start Recording</button>
-                    <button id="stop-rec" class="btn-secondary hidden">Stop & Save</button>
-                    <button id="download-csv" class="btn-outline hidden">Download CSV</button>
+                <div class="samples">
+                    <span id="sample-count">0</span> samples
                 </div>
-            </div>
-
-            <div class="log-info">
-                <p>Samples Collected: <span id="sample-count">0</span></p>
+                <div class="recording-actions">
+                    <button id="btn-record" class="btn btn-record">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="8" />
+                        </svg>
+                        <span>Record</span>
+                    </button>
+                    <button id="btn-stop" class="btn btn-stop hidden">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="6" y="6" width="12" height="12" rx="2" />
+                        </svg>
+                        <span>Stop</span>
+                    </button>
+                    <button id="btn-download" class="btn btn-download hidden">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                            <polyline points="7,10 12,15 17,10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        <span>Export CSV</span>
+                    </button>
+                </div>
             </div>
         </section>
 
+        <!-- Footer -->
         <footer class="footer">
-            <p>Runs best on Chrome (Android) or Safari (iOS). Requires HTTPS.</p>
+            <p>Built for precision motion analysis</p>
         </footer>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js"></script>
 </body>
 
