@@ -121,10 +121,10 @@ class CubeGraphVisualizer {
         const w = this.width;
         const h = this.height;
 
-        // Smooth interpolation
-        this.alpha += (this.targetAlpha - this.alpha) * 0.1;
-        this.beta += (this.targetBeta - this.beta) * 0.1;
-        this.gamma += (this.targetGamma - this.gamma) * 0.1;
+        // Smooth interpolation (0.4 = responsive but still smooth, 1.0 = instant)
+        this.alpha += (this.targetAlpha - this.alpha) * 0.4;
+        this.beta += (this.targetBeta - this.beta) * 0.4;
+        this.gamma += (this.targetGamma - this.gamma) * 0.4;
 
         // Clear canvas
         ctx.fillStyle = '#0a0a1a';
